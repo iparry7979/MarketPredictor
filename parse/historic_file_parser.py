@@ -68,6 +68,21 @@ def runner_change_stream(path: str):
         market_id = mc.get("id")
         for rc in mc.get("rc", []):
             yield ts, market_id, rc
+            
+def market_definition_stream(path: str):
+    """
+    Yields (timestamp, market_id, market_definition) triples.
+    The market_definition dict contains all static metadata.
+    """
+    for msg in raw_message_stream(path):
+        ts = msg.get("pt")
+
+        for mc in msg.get("mc", []):
+            if "marketDefinition" in mc:
+                market_id = mc["id"]
+                md = mc["marketDefinition"]
+                yield ts, market_id, md
+
  
 #for ts, mc in market_change_stream("D:/Betting System/Data/BetfairHistoricData/HorseRacing/Australia/2022/2/10/31224197/1.194446097.bz2"):
 #    print(ts, mc["id"])

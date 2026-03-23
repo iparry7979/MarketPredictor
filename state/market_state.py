@@ -60,3 +60,49 @@ class MarketState:
 
             # Apply delta to runner
             self.runners[selection_id].apply_delta(rc)
+    
+    def apply_market_definition(self, md: dict):
+        """
+        Applies the static marketDefinition metadata to this MarketState.
+        This is called once per market (or rarely, if Betfair reissues a definition).
+        """
+    
+        # -------- Market-level metadata --------
+        self.event_id = md.get("eventId")
+        self.event_type_id = md.get("eventTypeId")
+        self.market_type = md.get("marketType")
+        self.number_of_winners = md.get("numberOfWinners")
+        self.market_start_time = md.get("marketTime")  # ISO timestamp string
+    
+        # -------- Runner metadata --------
+        for rdef in md.get("runners", []):
+            selection_id = rdef["id"]
+    
+            # Create runner if not already present
+            if selection_id not in self.runners:
+                self.runners[selection_id] = RunnerState(
+                    selection_id=selection_id,
+                    name=rdef.get("name"),
+                    adjustment_factor=rdef.get("adjustmentFactor"),
+                    handicap=rdef.get("hc", 0.0)
+                )
+            else:
+                # Update metadata for existing runner
+                runner = self.runners[selection_id]
+                runner.name = rdef.get("name", runner.name)
+                runner.adjustment_factor = rdef.get("adjustmentFactor", runner.adjustment_factor)
+                runner.handicap = rdef.get("hc", runner.handicap)
+    
+        # -------- Market status fields --------
+        # These sometimes appear in marketDefinition too
+        if "inPlay" in md:
+            self.in_play = md["inPlay"]
+    
+        if "status" in md:
+            self.status = md["status"]
+    
+        if "betDelay" in md:
+            self.bet_delay = md["betDelay"]  # optional, useful later
+
+        
+        
