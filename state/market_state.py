@@ -1,6 +1,6 @@
 # market_state.py
 
-from runner_state import RunnerState
+from state.runner_state import RunnerState
 
 class MarketState:
     """

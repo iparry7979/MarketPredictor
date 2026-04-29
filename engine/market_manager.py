@@ -1,10 +1,11 @@
 # market_manager.py
 
-from market_state import MarketState
-from raw_parser import (
+from state.market_state import MarketState
+from parse.historic_file_parser import (
     raw_message_stream,
     market_definition_stream,
-    market_change_stream
+    market_change_stream,
+    open_raw_file
 )
 
 class MarketManager:
