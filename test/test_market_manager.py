@@ -11,7 +11,7 @@ def test_market_manager_end_to_end(monkeypatch):
     monkeypatch.setattr("parse.historic_file_parser.open_raw_file", lambda path: io.StringIO(FAKE_DATA))
 
     mm = MarketManager()
-    mm.process_file("dummy_path")
+    mm.process_file("dummy_path", emit_callback=lambda ts, m: None)
 
     market = mm.markets["1.234"]
 
