@@ -7,6 +7,7 @@ from parse.historic_file_parser import (
     market_change_stream,
     open_raw_file
 )
+from engine.snapshot_clock import SnapshotClock
 
 class MarketManager:
     """
@@ -54,18 +55,34 @@ class MarketManager:
     # ---------------------------------------------------------
     # MAIN RECONSTRUCTION LOOP
     # ---------------------------------------------------------
-    def process_file(self, path: str):
+    def process_file(self, path: str, emit_callback):
         """
-        Processes a raw Betfair file and updates all MarketState objects.
-        This is the main entry point for reconstruction.
+        Single‑pass reconstruction loop.
+        - Reads raw messages in timestamp order
+        - Applies market definitions
+        - Applies deltas
+        - Ticks snapshot clock
         """
+       
+        for msg in raw_message_stream(path):
+           ts = msg["pt"]
 
-        # First pass: market definitions
-        for ts, market_id, md in market_definition_stream(path):
-            self.apply_market_definition(ts, market_id, md)
+           # First pass: market definitions
+           #for ts, market_id, md in market_definition_stream(path):
+           # self.apply_market_definition(ts, market_id, md)
+          
+           for mc in msg.get("mc", []):
+                if "marketDefinition" in mc:
+                    self.apply_market_definition(ts, mc["id"], mc["marketDefinition"])
 
-        # Second pass: market deltas
-        for ts, mc in market_change_stream(path):
-            self.apply_market_delta(ts, mc)
+           # Second pass: market deltas
+           #for ts, mc in market_change_stream(path):
+           #  self.apply_market_delta(ts, mc)
+          
+           for mc in msg.get("mc", []):
+                if "rc" in mc:
+                    self.apply_market_delta(ts, mc)
+                    
+           SnapshotClock.tick(ts, self.markets, emit_callback)
 
-        # After this, self.markets contains fully reconstructed markets
+           # After this, self.markets contains fully reconstructed markets
